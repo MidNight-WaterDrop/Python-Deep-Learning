@@ -1,0 +1,121 @@
+import os
+import matplotlib.pyplot as plt
+from tensorflow.keras.preprocessing import image
+from tensorflow.keras.applications import VGG19
+from tensorflow.keras.layers import Dense, Flatten, Dropout, BatchNormalization
+from tensorflow.keras.models import Model
+from tensorflow.keras.optimizers import Adam, RMSprop
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
+from tensorflow.keras.regularizers import l2
+
+# Constants
+BASE_PATH = "./data"
+TRAIN_DIR = os.path.join(BASE_PATH, "train")
+VAL_DIR = os.path.join(BASE_PATH, "validation")
+IMG_WIDTH, IMG_HEIGHT = 150, 150
+BATCH_SIZE = 32
+EPOCHS = 50
+CLASSES = ["cats", "dogs", "panda"]
+
+# Function to count images in directories
+def count_images(directory):
+    total_images = sum(len(files) for _, _, files in os.walk(directory))
+    print(f"Total images in {directory}: {total_images}")
+    return total_images
+
+# Function to display sample images
+def display_sample_images(directory, num_samples=3):
+    fig, axes = plt.subplots(nrows=num_samples, ncols=len(CLASSES), figsize=(12, num_samples * 4))
+    for idx, category in enumerate(CLASSES):
+        category_dir = os.path.join(directory, category)
+        images = os.listdir(category_dir)[:num_samples]
+        for i, img_name in enumerate(images):
+            img_path = os.path.join(category_dir, img_name)
+            img = image.load_img(img_path, target_size=(IMG_WIDTH, IMG_HEIGHT))
+            axes[i, idx].imshow(img)
+            axes[i, idx].set_title(category)
+            axes[i, idx].axis("off")
+    plt.show()
+
+# Function to set up ImageDataGenerators
+def setup_data_generators():
+    train_datagen = ImageDataGenerator(rescale=1./255, shear_range=0.2, zoom_range=0.2, horizontal_flip=True)
+    val_datagen = ImageDataGenerator(rescale=1./255)
+    
+    train_generator = train_datagen.flow_from_directory(TRAIN_DIR, target_size=(IMG_WIDTH, IMG_HEIGHT),
+                                                        batch_size=BATCH_SIZE, class_mode='categorical')
+    val_generator = val_datagen.flow_from_directory(VAL_DIR, target_size=(IMG_WIDTH, IMG_HEIGHT),
+                                                    batch_size=BATCH_SIZE, class_mode='categorical')
+    return train_generator, val_generator
+
+# Function to build a model using VGG19
+def build_model(base_model, neurons=[512], dropout_rate=0.5, optimizer='adam'):
+    for layer in base_model.layers:
+        layer.trainable = False
+    
+    x = Flatten()(base_model.output)
+    for neuron in neurons:
+        x = Dense(neuron, activation='relu', kernel_regularizer=l2(0.01))(x)
+        x = BatchNormalization()(x)
+        x = Dropout(dropout_rate)(x)
+    
+    predictions = Dense(len(CLASSES), activation='softmax')(x)
+    model = Model(inputs=base_model.input, outputs=predictions)
+    model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+    return model
+
+# Function to train the model
+def train_model(model, train_generator, val_generator):
+    early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
+    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=3, min_lr=0.0001)
+    
+    history = model.fit(train_generator, steps_per_epoch=len(train_generator), epochs=EPOCHS,
+                        validation_data=val_generator, validation_steps=len(val_generator),
+                        callbacks=[early_stopping, reduce_lr])
+    return history
+
+# Function to plot accuracy and loss
+def plot_training_history(history):
+    epochs_range = range(len(history.history['accuracy']))
+    
+    plt.figure(figsize=(12, 5))
+    plt.subplot(1, 2, 1)
+    plt.plot(epochs_range, history.history['accuracy'], label='Training Accuracy')
+    plt.plot(epochs_range, history.history['val_accuracy'], label='Validation Accuracy')
+    plt.legend()
+    plt.title('Training and Validation Accuracy')
+    
+    plt.subplot(1, 2, 2)
+    plt.plot(epochs_range, history.history['loss'], label='Training Loss')
+    plt.plot(epochs_range, history.history['val_loss'], label='Validation Loss')
+    plt.legend()
+    plt.title('Training and Validation Loss')
+    plt.show()
+
+if __name__ == "__main__":
+    # Count images
+    count_images(TRAIN_DIR)
+    count_images(VAL_DIR)
+    
+    # Display sample images
+    display_sample_images(TRAIN_DIR)
+    
+    # Prepare data generators
+    train_gen, val_gen = setup_data_generators()
+    
+    # Load pre-trained VGG19
+    vgg19_base = VGG19(weights='imagenet', include_top=False, input_shape=(IMG_WIDTH, IMG_HEIGHT, 3))
+    
+    # Train baseline model
+    baseline_model = build_model(vgg19_base, neurons=[512], optimizer=Adam(lr=0.0001))
+    baseline_history = train_model(baseline_model, train_gen, val_gen)
+    plot_training_history(baseline_history)
+    
+    # Train optimized model with different optimizer and more neurons
+    optimized_model = build_model(vgg19_base, neurons=[1024, 512], optimizer=RMSprop(lr=0.0001))
+    optimized_history = train_model(optimized_model, train_gen, val_gen)
+    plot_training_history(optimized_history)
+    
+    # Save the best model
+    optimized_model.save(os.path.join(BASE_PATH, "zoo_classifier_model.h5"))
