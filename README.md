@@ -17,11 +17,6 @@ pip install tensorflow keras numpy pandas matplotlib scikit-learn
 ## Usage
 Each project includes Jupyter notebooks or Python scripts with detailed explanations. Run them in a Jupyter environment or directly as Python scripts.
 
-## Future Enhancements
-- Experiment with hyperparameter tuning and model optimization.
-- Extend projects with transfer learning and advanced architectures.
-- Implement real-world applications with deployment.
-
 ## License
 This repository is open-source under the MIT License.
 
