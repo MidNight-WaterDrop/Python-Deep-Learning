@@ -1,33 +1,30 @@
-Overview
+# Python Deep Learning
 
-This repository contains deep learning projects implemented in Python using frameworks such as Keras and TensorFlow. Each project explores various neural network architectures and training methodologies.
+## Overview
+This repository contains deep learning projects implemented in **Python** using frameworks such as **Keras and TensorFlow**. Each project explores various neural network architectures and training methodologies.
 
-Contents
+## Contents
+### 1. Neural Network Models
+- **Building a Zoo Classifier** – Implementing a neural network to classify animals based on attributes.
+- **Using Keras to Build and Train Neural Networks** – A comprehensive guide to building deep learning models using Keras.
 
-1. Neural Network Models
-
-Building a Zoo Classifier – Implementing a neural network to classify animals based on attributes.
-
-Using Keras to Build and Train Neural Networks – A comprehensive guide to building deep learning models using Keras.
-
-Installation
-
+## Installation
 Ensure you have Python and the required libraries installed:
-
+```bash
 pip install tensorflow keras numpy pandas matplotlib scikit-learn
+```
 
-Usage
-
+## Usage
 Each project includes Jupyter notebooks or Python scripts with detailed explanations. Run them in a Jupyter environment or directly as Python scripts.
 
-Future Enhancements
+## Future Enhancements
+- Experiment with hyperparameter tuning and model optimization.
+- Extend projects with transfer learning and advanced architectures.
+- Implement real-world applications with deployment.
 
-Experiment with hyperparameter tuning and model optimization.
-
-Extend projects with transfer learning and advanced architectures.
-
-Implement real-world applications with deployment.
-
-License
-
+## License
 This repository is open-source under the MIT License.
+
+## Contact
+For any queries, reach out to **Cheng Yu Wu**.
+
